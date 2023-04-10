@@ -1,10 +1,10 @@
-name: Any2Any_4btnk_cont
-model_type: PyramidAnyRelightingModel
-layers: 3
+name: relighter_real
+model_type: PyramidRelightingModel
+layers: 1
 scale_factor: 2
 interp_mode: bicubic
-scale: 1
-num_gpu: 1 # set num_gpu: 0 for cpu mode
+scale: 3
+num_gpu: 1  # set num_gpu: 0 for cpu mode
 gpu_id: "0"
 manual_seed: 10
 rank: 0
@@ -14,32 +14,35 @@ parallel: True
 
 datasets:
   train:
-    name: DPRData
-    type: DPRDataset
-    dataroot: /datatmp/datasets/yixiong/DPR_tiny_test
+    name: AdobeMultiIllumination
+    type: AdobeMultiIllumination256OnetoOneDataset
+    dataroot: /datatmp/datasets/yixiong/Multi_Illumination_small/train
+    input_dir: 0
+    gt_dir: 17
 
-    gt_size: 0
+    gt_size: 256
+    use_flip: false
+    use_rot: false
 
     # data loader
     use_shuffle: true
-    num_worker_per_gpu: 5
+    num_worker_per_gpu: 2
     batch_size_per_gpu: 5
     dataset_enlarge_ratio: 1
     prefetch_mode: ~
 
   val:
-    name: DPRData
-    type: DPRDataset
-    test_mode: true
-    dataroot: /datatmp/datasets/yixiong/DPR_tiny_test
+    name: AdobeMultiIllumination
+    type: AdobeMultiIllumination256OnetoOneDataset
+    dataroot: /datatmp/datasets/yixiong/Multi_Illumination_small/test
+    input_dir:  0
+    gt_dir: 17
+
 
 # network structures
 network_g:
-  type: "Any2Any"
-  in_channels: 3
-  aux_channels: 3
-  light_probe_channels: 9
-  short_connection: false
+  type: "One2One_noaux"
+  short_connection: True
 
 # path
 path:
@@ -55,9 +58,9 @@ train:
     weight_decay: 0
     betas: [0.9, 0.99]
 
-  total_iter: 72000
+  total_iter: 120000
   warmup_iter: -1  # no warm up
-  decay_freq: 72000 # no decay
+  decay_freq: 120000 # no decay
   gamma: 0.5
 
   # losses
@@ -65,22 +68,21 @@ train:
       type: L1Loss
       loss_weight: 1.0
       reduction: mean
-  # ssim_opt:
-  #     type: SSIMLoss
-  #     loss_weight: 1
   grad_opt:
       type: GradientLoss
-      loss_weight: 1.0
+      loss_weight: 1
       reduction: mean
-
 
 # validation settings
 val:
-  val_freq: !!float 3000
-  save_img: false
+  val_freq: !!float 1000
+  save_img: True
   save_tb_img: false
   save_tb_select: 
-    - Image3331
+    - Image333
+    - Image334
+    - Image315
+    - Image317
 
   metrics:
     psnr:
@@ -104,7 +106,7 @@ val:
 
 # logging settings
 logger:
-  print_freq: 10
-  save_checkpoint_freq: !!float 3000
+  print_freq: 1000
+  save_checkpoint_freq: !!float 1000
   use_tb_logger: True
 

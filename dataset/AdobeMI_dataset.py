@@ -4,6 +4,7 @@ import numpy as np
 from torch.utils import data as data 
 from dataset.data_utils import img2tensor, imread, parse_adobe_dataset, select_one2one_data
 from dataset.transforms import augment, multi_random_crop
+import os
 
 def showimg(img, name):
     import numpy as np
@@ -256,6 +257,89 @@ class AdobeMultiIlluminationWithSegOnetoOneDataset(data.Dataset):
                 'input': img_input,
                 'input_path': input_path,
                 'mask': mask,
+            }
+
+    def __len__(self):
+        return len(self.paths)
+
+
+class AdobeMultiIllumination256OnetoOneDataset(data.Dataset):
+    def __init__(self, opt):
+        super().__init__()
+        self.opt = opt
+        self.paths = self.get_paths(opt['dataroot'], self.opt['input_dir'], self.opt['gt_dir'])
+        # self.seg_dic = get_seg_dict(opt['seg_root'])
+        if opt.get('test_mode') == None:
+            self.test_mode = False
+        else:
+            self.test_mode = opt['test_mode']
+
+    def get_paths(self, dataroot, input_dir, gt_dir):
+        scenes = os.listdir(dataroot)
+        paths = []
+        for scene in scenes:
+            data_root = os.path.join(dataroot, scene)
+            input_name = f'dir_{input_dir}_mip2.jpg'
+            gt_name = f'dir_{gt_dir}_mip2.jpg'
+            input_gray_probe = os.path.join(data_root, 'probes', f'dir_{input_dir}_gray256.jpg')
+            input_chrome_probe = os.path.join(data_root, 'probes', f'dir_{input_dir}_chrome256.jpg')
+            gt_gray_probe = os.path.join(data_root, 'probes', f'dir_{gt_dir}_gray256.jpg')
+            gt_chrome_probe = os.path.join(data_root, 'probes', f'dir_{gt_dir}_chrome256.jpg')
+
+            data_dic = {}
+            data_dic['input'] = os.path.join(data_root, input_name)
+            data_dic['gt'] = os.path.join(data_root, gt_name)
+            data_dic['input_gray_probe'] = input_gray_probe
+            data_dic['gt_gray_probe'] = gt_gray_probe
+            data_dic['input_chrome_probe'] = input_chrome_probe
+            data_dic['gt_chrome_probe'] = gt_chrome_probe
+
+            paths.append(data_dic)
+
+        return paths
+
+    def __getitem__(self, index):
+        # Load gt and input images. Dimension order: HWC; channel order: BGR;
+        # image range: [-1, 1], float32.
+
+        data_dic = self.paths[index]
+        gt_path = data_dic['gt']
+        input_path = data_dic['input']
+        # print(input_path)
+        img_input = imread(input_path)
+        img_gt = imread(gt_path)
+
+        scene_name, input_name = input_path.split('/')[-2:]
+        gt_name = gt_path.split('/')[-1]
+
+        input_path = f'{scene_name}_{input_name}'
+        gt_path = f'{scene_name}_{gt_name}'
+
+        # BGR to RGB, HWC to CHW, numpy to tensor
+        if self.test_mode:
+            img_input = img2tensor([img_input],
+                                   bgr2rgb=True,
+                                   float32=True)
+            img_gt = None
+            gt_path = None
+        else:
+            img_gt, img_input = img2tensor([img_gt, img_input],
+                                           bgr2rgb=True,
+                                           float32=True)
+
+        if img_gt != None:
+            return {
+                'input': img_input,
+                'gt': img_gt,
+                # 'mask': mask,
+                'input_path': input_path,
+                'gt_path': gt_path
+            }
+        else:
+            return {
+                'input': img_input,
+                'input_path': input_path,
+                # 'mask': mask,
             }
 
     def __len__(self):
