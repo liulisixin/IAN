@@ -16,14 +16,14 @@ datasets:
   train:
     name: DPRData
     type: DPRDataset
-    dataroot: data/DPR_dataset
+    dataroot: /datatmp/datasets/yixiong/DPR_tiny_test
 
-    gt_size: 0
+    gt_size: 256
 
     # data loader
     use_shuffle: true
-    num_worker_per_gpu: 5
-    batch_size_per_gpu: 5
+    num_worker_per_gpu: 2
+    batch_size_per_gpu: 2
     dataset_enlarge_ratio: 1
     prefetch_mode: ~
 
@@ -31,7 +31,7 @@ datasets:
     name: DPRData
     type: DPRDataset
     test_mode: true
-    dataroot: data/DPR_dataset
+    dataroot: /datatmp/datasets/yixiong/DPR_tiny_test
 
 # network structures
 network_g:
