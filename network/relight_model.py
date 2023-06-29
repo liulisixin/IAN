@@ -195,6 +195,10 @@ class PyramidRelightingModel(BaseModel):
 
             # tentative for out of GPU memory
             torch.cuda.empty_cache()
+
+            # # debug
+            # relight_img = cv2.resize(relight_img, (256, 256))
+            # gt_img = cv2.resize(gt_img, (256, 256))
             
             if self.opt['val']['save_tb_img'] and img_name in self.opt['val']['save_tb_select']:
                 input_img_rgb = tensor2img(self.input[0][:, :3, :, :], rgb2bgr=False, min_max=(-1, 1))
